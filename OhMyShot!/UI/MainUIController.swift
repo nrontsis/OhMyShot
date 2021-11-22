@@ -53,7 +53,7 @@ class MainUIController: UIViewController {
         var controller_type = [
             "Profiled": ProfiledBrewController.self,
             "Plain": PlainBrewController.self,
-            "Warmup": PlainBrewController.self,
+            "Warmup": WarmupCoffeeController.self,
             "Backflush": BackFlushingBrewController.self,
         ][string_setting("controllerType")]!
         let coffee_machine_interface = ble_controller.create_coffee_machine_interface()
@@ -74,13 +74,13 @@ class MainUIController: UIViewController {
     }
     
     func updateCharts() {
-        /*
         let chart = create_past_shots_chart(
-            width: plotView.frame.width, height: plotView.frame.height, show_rate: plotStyle!.selectedSegmentIndex == 0
+            width: plotView.frame.width,
+            height: plotView.frame.height,
+            show_rate: plotStyle!.selectedSegmentIndex == 0
         )
         chart.delegate = self
         plotView.addSubview(chart)
-        */
     }
     
     @IBOutlet weak var plotView: UIView!

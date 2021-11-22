@@ -48,7 +48,7 @@ class BrewController {
         self.scale = scale
         self.coffee_machine = coffee_machine
         self.desired_brew_weight = desired_brew_weight
-        self.set_idle_coffee_machine_parameters()
+        DispatchQueue.global(qos: .background).async{self.set_idle_coffee_machine_parameters()}
     }
     
     func process_coffee_machine_message(message: Data) {
@@ -60,11 +60,14 @@ class BrewController {
             coffee_machine_temperature = temperature
         }
         if !brewing && coffee_machine.has_just_started_brewing(message: message) {
-            brewing = true
-            DispatchQueue.global(qos: .background).async{self.start_brewing_profile()}
-            brewing = false
+            DispatchQueue.global(qos: .background).async{
+                self.brewing = true
+                self.start_brewing_profile()
+                self.brewing = false
+            }
         }
         else if coffee_machine.has_just_stopped_brewing(message: message) {
+            print("disabling brewing")
             brewing = false
         }
     }
@@ -128,8 +131,10 @@ class PlainBrewController: BrewController {
         return true
     }
     
-    override func set_idle_coffee_machine_parameters() {
-        coffee_machine.set_preinfusion_state(on: false)
+    override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
+        coffee_machine.set_boiler_temperature_target_for_brewing(
+            degrees_celcius: setting("boilerTemperatureSetpoint")
+        )
         coffee_machine.set_initial_pressure(percentage: 100)
         coffee_machine.set_final_pressure(percentage: 100)
     }
@@ -137,11 +142,16 @@ class PlainBrewController: BrewController {
     override func start_brewing_profile() {  // This function runs in a separate thread
         let start_time = Date()
         scale.restart()
+        if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
+        }
         coffee_machine.set_maximum_shot_time(seconds: 60)
-        wait_until{!desired_weight_was_reached() && brewing}
+        wait_until{!desired_weight_was_reached()}
         coffee_machine.set_maximum_shot_time(seconds: Int(-start_time.timeIntervalSinceNow))
         sleep(1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
+        coffee_machine.set_boiler_temperature_target_for_brewing(
+            degrees_celcius: setting("boilerTemperatureSetpoint")
+        )
     }
 }
 
@@ -153,13 +163,15 @@ class ProfiledBrewController: BrewController {
     override func start_brewing_profile() {  // This function runs in a separate thread
         let start_time = Date()
         scale.restart()
-        coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
+        if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
+        }
         wait_until(condition: {current_brew_weight < setting("nonzeroWeightThreshold")})
         if brewing {full_power_with_delayed_rampdown(brew_start_time: start_time)}
-        wait_until(condition: {current_brew_weight < setting("nonzeroWeightThreshold")})
+        wait_until{!desired_weight_was_reached()}
         coffee_machine.set_maximum_shot_time(seconds: Int(-start_time.timeIntervalSinceNow))
         sleep(1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
+        set_idle_coffee_machine_parameters()
     }
     
     func full_power_with_delayed_rampdown(brew_start_time: Date) {
@@ -175,22 +187,26 @@ class ProfiledBrewController: BrewController {
         coffee_machine.set_final_pressure(percentage: ramp_down_parameters["final_power"]!)
     }
     
-    override func set_idle_coffee_machine_parameters() {
-        coffee_machine.set_preinfusion_state(on: false)
+    override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
         coffee_machine.set_initial_pressure(percentage: Int(round(setting("initialPumpPower"))))
         coffee_machine.set_final_pressure(percentage: 100)
         let rampup_time = (100.0 - setting("initialPumpPower"))/setting("initialRampUpRate")
         coffee_machine.set_pressure_rampup_time(seconds: Int(rampup_time))
         coffee_machine.set_added_power_when_brewing(percent: Int(setting("addedBoilerPowerWhileBrewing")))
-        coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: setting("boilerTemperatureSetpoint"))
+        coffee_machine.set_boiler_temperature_target_for_brewing(
+            degrees_celcius: setting("boilerTemperatureSetpoint")
+        )
     }
 }
 
 
 
 class BackFlushingBrewController: BrewController {
+    private let pause_time = 10
+    private let brew_time = 4
+    
     override func process_coffee_machine_message(message: Data) {
-        // Don't listened to the stopped brewing messages
+        // Don't listen to the stopped brewing messages
         // Many messages like this will be generated while backflushign
         // because we repeatedly start and stop brewing
         if !coffee_machine.has_just_stopped_brewing(message: message) {
@@ -198,33 +214,44 @@ class BackFlushingBrewController: BrewController {
         }
     }
     
-    override func set_idle_coffee_machine_parameters() {
-        coffee_machine.set_preinfusion_state(on: false)
+    override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
         coffee_machine.set_initial_pressure(percentage: 100)
         coffee_machine.set_final_pressure(percentage: 100)
+        coffee_machine.set_maximum_shot_time(seconds: brew_time + 1)
+        coffee_machine.set_boiler_temperature_target_for_brewing(
+            degrees_celcius: setting("boilerTemperatureSetpoint")
+        )
     }
     
     override func start_brewing_profile() {  // This function runs in a separate thread
-        let backflush_iterations = 5
+        let start_time = Date()
+        let backflush_iterations = 2
         for backflush_iteration in 1...backflush_iterations {
-            if brewing {coffee_machine.set_maximum_shot_time(seconds: 0)}
-            wait_for(seconds: 4.5)
-            if brewing {coffee_machine.set_maximum_shot_time(seconds: 1)}
-            if brewing && backflush_iteration < backflush_iterations {
-                wait_for(seconds: 10)
+            let current_shot_end_time = (backflush_iteration - 1)*(brew_time + pause_time) + brew_time
+            if brewing && backflush_iteration > 1 { // First shot slightly longer than the rest
+                coffee_machine.set_maximum_shot_time(seconds: current_shot_end_time)
+            }
+            if backflush_iteration < backflush_iterations {
+                wait_until{-start_time.timeIntervalSinceNow < Double(current_shot_end_time + pause_time) - 0.5}
+            }
+            else {
+                wait_until{-start_time.timeIntervalSinceNow < Double(current_shot_end_time)}
             }
         }
-        coffee_machine.set_maximum_shot_time(seconds: max(backflush_iterations*15 - 10, 60))
+        coffee_machine.set_maximum_shot_time(seconds: brew_time + 1)
     }
 }
 
 class WarmupCoffeeController: BrewController {
-    override func set_idle_coffee_machine_parameters() {
+    override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
         coffee_machine.set_preinfusion_state(on: false)
         coffee_machine.set_initial_pressure(percentage: Int(setting("warmupPumpPower")))
         coffee_machine.set_final_pressure(percentage: Int(setting("warmupPumpPower")))
         coffee_machine.set_added_power_when_brewing(percent: Int(setting("warmupAddedBoilerPower")))
         coffee_machine.set_maximum_shot_time(seconds: Int(setting("warmupDuration")))
+        coffee_machine.set_boiler_temperature_target_for_brewing(
+            degrees_celcius: setting("boilerTemperatureSetpoint")
+        )
     }
     
     override func start_brewing_profile() {}  // This function runs in a separate thread

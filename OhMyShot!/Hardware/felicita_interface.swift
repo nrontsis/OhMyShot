@@ -33,8 +33,8 @@ class FelicitaInterface : ScaleInterface {
     
     func restart() {
         tare()
-        start_timer()
         reset_timer()
+        start_timer()
     }
 
     func get_weight(message: Data) -> Double? {

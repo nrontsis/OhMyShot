@@ -39,10 +39,9 @@ func interpolate_interior(x: [Double], y: [Double], step: Double) -> [Double] {
     )
 }
 
-func moving_median(_ data: [Double], period: Int, out_of_bounds_value: Double = 0.0) -> [Double] {
+func moving_avergae(_ data: [Double], period: Int) -> [Double] {
     let result = (0..<data.count).compactMap { index -> Double in
-        if (0..<period).contains(index) { return out_of_bounds_value }
-        let range = index - period..<index
+        let range = index..<index + period
         let window = Array(data[range])
         return window.reduce(0.0, +)/Double(window.count)
     }

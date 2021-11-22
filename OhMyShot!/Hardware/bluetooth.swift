@@ -78,6 +78,7 @@ class BluetoothController: NSObject, CBPeripheralDelegate, CBCentralManagerDeleg
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        print("Connected to:", peripheral.name!, " - Discovering services.")
         peripheral.discoverServices([CBUUID(string: SERVICES_CBUUIDS[peripheral.name!]!)])
     }
     
@@ -86,13 +87,15 @@ class BluetoothController: NSObject, CBPeripheralDelegate, CBCentralManagerDeleg
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        print("BLE Manager: disconnected \(peripheral.name!)")
         let callback = peripheral.name == MECOFFEE_BLE_NAME ? coffe_machine_message_callback : scale_message_callback
         characteristics.removeValue(forKey: peripheral.name!)
         callback?(peripheral.name == MECOFFEE_BLE_NAME ? DISCONNECTED_MECOFFEE : DISCONNECTED_SCALE)
+        ble_manager.connect(peripheral, options: nil)
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        print("Manager: discovered \(peripheral), rssi: \(RSSI)")
+        print("BLE Manager: discovered \(peripheral), rssi: \(RSSI)")
         if [SCALE_BLE_NAME, MECOFFEE_BLE_NAME].contains(peripheral.name) {
             print("Connecting to", peripheral.name!)
             peripherals[peripheral.name!] = peripheral

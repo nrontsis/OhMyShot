@@ -14,7 +14,7 @@ func raw_setting(_ key: String) -> String {
     }
     else {
         let defaults: [String : String] = [
-            "plotsStatAtNonZeroWeight": "false",
+            "plotsStartAtNonZeroWeight": "false",
             "boilerTemperatureSetpoint": "101.0",
             "addedBoilerPowerWhileBrewing": "6.0",
             "initialPumpPower": "40",
@@ -28,6 +28,7 @@ func raw_setting(_ key: String) -> String {
             "warmupDuration": "25",
             "warmupPumpPower": "40",
             "warmupAddedBoilerPower": "45",
+            "disablePIDWhenBrewing": "true",
         ]
         return defaults[key]!
     }
@@ -35,7 +36,7 @@ func raw_setting(_ key: String) -> String {
 
 func save_setting(_ key: String, _ value: String, should_reload: Bool = true) {
     persistent_data.set(value, forKey: key)
-    if !(["shouldReloadSettings", "plotsStatAtNonZeroWeight"].contains(key)) && should_reload {
+    if !(["shouldReloadSettings", "plotsStartAtNonZeroWeight"].contains(key)) && should_reload {
         persistent_data.set("true", forKey: "shouldReloadSettings")
     }
 }
@@ -55,14 +56,14 @@ func string_setting(_ key: String) -> String {
 func save_shot_weight(_ series: TimeSeries){
     print("Saving:", series)
     shift_saved_shots()
-    persistent_data.set(series.times + series.values, forKey: "shot_weight[0]")
+    persistent_data.set(series.times + series.values, forKey: "shotWeight[0]")
 }
 
 func shift_saved_shots() {
     for i in (1...number_of_shots_saved).reversed() {
         persistent_data.set(
-            persistent_data.value(forKey: "shot_weight[\(i - 1)]"),
-            forKey: "shot_weight[\(i)]"
+            persistent_data.value(forKey: "shotWeight[\(i - 1)]"),
+            forKey: "shotWeight[\(i)]"
         )
     }
 }
@@ -78,7 +79,7 @@ func load_shot_weight_per_decisecond(_ index: Int = 0) -> [Double] {
 }
 
 func load_shot_weight_series(_ index: Int = 0) -> TimeSeries {
-    if let data = persistent_data.value(forKey: "shot_weight[\(index)]") as? [Double] {
+    if let data = persistent_data.value(forKey: "shotWeight[\(index)]") as? [Double] {
         return TimeSeries(times: Array(data[0..<data.count/2]), values: Array(data[(data.count/2)...]))
     }
     return TimeSeries(times: [Double](), values: [Double]())
@@ -89,7 +90,7 @@ func save_dummy_data() {
         let series = TimeSeries(times: [0.0, 1.0, 10.0], values: [0.0, 1.0, 10.0])
         persistent_data.set(
             series.times + series.values,
-            forKey: "shot_weight[\(i)]"
+            forKey: "shotWeight[\(i)]"
         )
     }
 }

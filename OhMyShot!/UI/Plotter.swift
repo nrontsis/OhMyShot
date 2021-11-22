@@ -15,10 +15,10 @@ func create_past_shots_chart(width: CGFloat, height: CGFloat, show_rate: Bool) -
     var data = [[Double]]()
     for i in 0...3 {
         var series = load_shot_weight_per_decisecond(i)
-        if is_true("plotsStatAtNonZeroWeight") {
+        if is_true("plotsStartAtNonZeroWeight") {
             series = series.filter{$0 > setting("nonzeroWeightThreshold")}
         }
-        data.append(show_rate ? moving_median(deltas(series), period: 25) : series)
+        data.append(show_rate ? moving_avergae(deltas(series), period: 25) : series)
     }
     var series = [AASeriesElement]()
     for (i, datum) in data.enumerated() {

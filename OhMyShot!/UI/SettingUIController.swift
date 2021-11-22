@@ -25,7 +25,9 @@ class SettingUIController: UITableViewController {
     }
     
     func updateUI() {
-        plotsStartAtNonZeroWeight.isOn = Bool(get_value("plotsStatAtNonZeroWeight"))!
+        plotsStartAtNonZeroWeight.isOn = Bool(get_value("plotsStartAtNonZeroWeight"))!
+        
+        disablePIDWhenBrewing.isOn = Bool(get_value("disablePIDWhenBrewing"))!
         
         rampDownRate.value = Float(get_value("rampDownRate"))!
         rampDownRateLabel.text! = get_value("rampDownRate") + "% per second"
@@ -45,6 +47,16 @@ class SettingUIController: UITableViewController {
         
         boilerTemperatureSetpoint.value = Float(get_value("boilerTemperatureSetpoint"))!
         boilerTemperatureSetpointLabel.text! = get_value("boilerTemperatureSetpoint") + " °C"
+        
+        
+        warmupAddedBoilerPower.value = Float(get_value("warmupAddedBoilerPower"))!
+        warmupAddedBoilerPowerLabel.text! = get_value("warmupAddedBoilerPower") + "%"
+        
+        warmupPumpPower.value = Float(get_value("warmupPumpPower"))!
+        warmupPumpPowerLabel.text! = get_value("warmupPumpPower") + "%"
+        
+        warmupDuration.value = Float(get_value("warmupDuration"))!
+        warmupDurationLabel.text! = get_value("warmupDuration") + " seconds"
     }
     
     func get_value(_ key: String) -> String {
@@ -56,12 +68,20 @@ class SettingUIController: UITableViewController {
         }
     }
     
+    @IBOutlet weak var warmupPumpPowerLabel: UILabel!
+    @IBOutlet weak var warmupAddedBoilerPowerLabel: UILabel!
+    @IBOutlet weak var warmupDurationLabel: UILabel!
+    @IBOutlet weak var warmupPumpPower: UISlider!
+    @IBOutlet weak var warmupAddedBoilerPower: UISlider!
+    @IBOutlet weak var warmupDuration: UISlider!
     @IBOutlet weak var rampDownRate: UISlider!
     @IBOutlet weak var stayAtFullPowerDuration: UISlider!
     @IBOutlet weak var initialRampUpRate: UISlider!
     @IBOutlet weak var initialPumpPower: UISlider!
     @IBOutlet weak var addedBoilerPowerWhileBrewing: UISlider!
     @IBOutlet weak var plotsStartAtNonZeroWeight: UISwitch!
+    
+    @IBOutlet weak var disablePIDWhenBrewing: UISwitch!
     @IBOutlet weak var boilerTemperatureSetpoint: UISlider!
     @IBOutlet weak var rampDownRateLabel: UILabel!
     @IBOutlet weak var stayAtFullPowerDurationLabel: UILabel!
@@ -84,6 +104,18 @@ class SettingUIController: UITableViewController {
     @IBAction func stayAtFullPowerDurationChanged(_ sender: UISlider) {
         update_value("stayAtFullPowerDuration", String(format: "%.1f", sender.value))
     }
+    @IBAction func warmupDurationChanged(_ sender: UISlider) {
+        update_value("warmupDuration", String(format: "%.0f", sender.value))
+    }
+    
+    @IBAction func warmupAddedBoilerPowerChanged(_ sender: UISlider) {
+        update_value("warmupAddedBoilerPower", String(format: "%.0f", sender.value))
+    }
+    
+    @IBAction func warmupPumpPowerChanged(_ sender: UISlider) {
+        update_value("warmupPumpPower", String(format: "%.0f", sender.value))
+    }
+    
     @IBOutlet weak var saveButton: UIButton!
     @IBAction func save(_ sender: UIButton) {
         for (key, value) in updated_values {
@@ -94,7 +126,12 @@ class SettingUIController: UITableViewController {
     @IBAction func rampDownRateChanged(_ sender: UISlider) {
         update_value("rampDownRate", String(format: "%.1f", sender.value))
     }
-    @IBAction func plotStartChanged(_ sender: UISwitch) {
-        update_value("plotsStatAtNonZeroWeight", String(sender.isOn))
+    @IBAction func plotsStartAtNonZeroWeightChanged(_ sender: UISwitch) {
+        update_value("plotsStartAtNonZeroWeight", String(sender.isOn))
     }
+    
+    @IBAction func disablePIDWhenBrewingChanged(_ sender: UISwitch) {
+        update_value("disablePIDWhenBrewing", String(sender.isOn))
+    }
+    
 }
