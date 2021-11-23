@@ -8,6 +8,9 @@ It requires a coffee machine with meCoffee (BLE version) installed, and a blueto
 See the following video for a quick introduction, and the following post at CoffeeForums.co.uk.
 
 ## Installation
+Before using the repo, make sure you have read its disclaimer below.
+
+
 The repo uses [cocoa-pods for its dependencies](https://guides.cocoapods.org/using/getting-started.html). Upon downloading, run
 ```
 pods installs
