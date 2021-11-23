@@ -39,3 +39,8 @@ INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PA
 PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
 FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## License
+The code is distributed under a GPLv2 license. Although the intention was to use a more permissive license, this work was partly based on [this work](https://git.mecoffee.nl/meBarista/meBarista_for_Android) that comes under GPLv2 license.
+
+The icons of the app are from this [designer](https://www.behance.net/gallery/43384887/FREE-COFFEE-ICONS/modules/275833981).
