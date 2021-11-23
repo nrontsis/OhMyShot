@@ -39,6 +39,13 @@ class MeCoffeeInterface: CoffeeMachineInterface {
         }
         return nil
     }
+    
+    func print_info(message: Data) {
+        let str = String(data: message, encoding: .ascii)!
+        if !str.contains("tmp ") && !str.contains("pid ") && str.count > 6 {
+            print(str.replacingOccurrences(of: "[\\r\\n]", with: "", options: .regularExpression))
+        }
+    }
 
     func has_just_stopped_brewing(message: Data) -> Bool {
         if let str: String = String(data: message, encoding: .ascii) {

@@ -25,15 +25,17 @@ class MainUIController: UIViewController {
     func received_scale_message(data: Data) {
         recreate_controller_if_necessary(data)
         controller!.process_scale_message(message: data)
-        weightLabel.text = String(format: "%.1f", controller!.current_brew_weight) + " g"
+        update_info_label(weight: controller!.current_brew_weight)
     }
     
     func received_coffee_machine_message(data: Data) {
         recreate_controller_if_necessary(data)
         controller!.process_coffee_machine_message(message: data)
         controllerTypeSelection.isEnabled = !controller!.brewing
-        temperatureLabel.text = String(format: "%.2f", controller!.coffee_machine_temperature) + " °C"
-        coffeeMachineRuntime.text = "\(Int(round(controller!.minutes_since_coffee_machine_power_on)))m"
+        update_info_label(
+            temperature: controller!.coffee_machine_temperature,
+            runtime: controller!.minutes_since_coffee_machine_power_on
+        )
     }
     
     func recreate_controller_if_necessary(_ msg: Data) {
@@ -68,8 +70,7 @@ class MainUIController: UIViewController {
         }
         return controller_type.init(
             scale: scale_interface,
-            coffee_machine: coffee_machine_interface,
-            desired_brew_weight: setting("desiredBrewWeight")
+            coffee_machine: coffee_machine_interface
         )
     }
     
@@ -84,21 +85,28 @@ class MainUIController: UIViewController {
     }
     
     @IBOutlet weak var plotView: UIView!
-    @IBOutlet weak var temperatureLabel: UILabel!
-    @IBOutlet weak var coffeeMachineRuntime: UILabel!
     @IBOutlet weak var desiredBrewWeightLabel: UILabel!
     @IBOutlet weak var statusLabel: UILabel!
-    @IBOutlet weak var weightLabel: UILabel!
+    @IBOutlet weak var infoLabel: UILabel!
     @IBAction func desiredBrewWeightChanged(_ sender: UISlider) {
         let value = String(format: "%.1f", sender.value)
         desiredBrewWeightLabel.text = value + " g"
         save_setting("desiredBrewWeight", value, should_reload: false)
-        controller?.desired_brew_weight = Double(value)!
     }
     @IBOutlet weak var plotStyle: UISegmentedControl!
     @IBAction func controllerTypeChanged(_ sender: UISegmentedControl) {
         let mode = sender.titleForSegment(at: sender.selectedSegmentIndex)
         save_setting("controllerType", mode!)
+    }
+    func update_info_label(temperature: Double? = nil, runtime: Double? = nil, weight: Double? = nil) {
+        let info = infoLabel.text!
+        var runtime_str = info.subString(from: 0, to: 2)
+        var temp_str = info.subString(from: 6, to: 11)
+        var final_str = info[info.firstIndex(of: "🌡")!...]
+        if runtime != nil && !runtime!.isNaN { runtime_str = String(format:"%2.0f", runtime!)}
+        if temperature != nil && !temperature!.isNaN { temp_str = String(format:"%5.1f", temperature!)}
+        if weight != nil && !weight!.isNaN { final_str = "🌡 " + String(format:"%4.1f", weight!) + "g ⚖️"}
+        infoLabel.text = "\(runtime_str)m ⌛ \(temp_str)°C \(final_str)"
     }
     @IBOutlet weak var controllerTypeSelection: UISegmentedControl!
     @IBOutlet weak var desiredBrewWeightSlider: UISlider!
@@ -114,5 +122,13 @@ extension MainUIController: AAChartViewDelegate {
        for i in 2...3 {
            aaChartView.aa_hideTheSeriesElementContentWithSeriesElementIndex(i)
        }
+    }
+}
+
+extension String {
+    func subString(from: Int, to: Int) -> String {
+       let startIndex = self.index(self.startIndex, offsetBy: from)
+       let endIndex = self.index(self.startIndex, offsetBy: to)
+       return String(self[startIndex..<endIndex])
     }
 }

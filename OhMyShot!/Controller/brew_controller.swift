@@ -31,34 +31,25 @@ protocol ScaleInterface {
 class BrewController {
     let scale: ScaleInterface
     let coffee_machine: CoffeeMachineInterface
-    var current_brew_weight = Double.nan
-    var desired_brew_weight = Double.nan
     var minutes_since_coffee_machine_power_on: Double = 0.0
     var coffee_machine_temperature: Double = Double.nan
-    
     var brewing = false
-    var recording = false
-    var brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
+    var current_brew_weight = Double.nan
+    
+    private var brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
 
     class func requires_scale() -> Bool {
         return false
     }
     
-    required init(scale: ScaleInterface, coffee_machine: CoffeeMachineInterface, desired_brew_weight: Double) {
+    required init(scale: ScaleInterface, coffee_machine: CoffeeMachineInterface) {
         self.scale = scale
         self.coffee_machine = coffee_machine
-        self.desired_brew_weight = desired_brew_weight
         DispatchQueue.global(qos: .background).async{self.set_idle_coffee_machine_parameters()}
     }
     
     func process_coffee_machine_message(message: Data) {
-        let str = String(data: message, encoding: .ascii)!
-        if !str.contains("tmp ") && !str.contains("pid ") && str.count > 6 {
-            print(str.replacingOccurrences(of: "[\\r\\n]", with: "", options: .regularExpression))
-        }
-        if let temperature = coffee_machine.get_temperature(message: message) {
-            coffee_machine_temperature = temperature
-        }
+        if let temperature = coffee_machine.get_temperature(message: message) { coffee_machine_temperature = temperature}
         if !brewing && coffee_machine.has_just_started_brewing(message: message) {
             DispatchQueue.global(qos: .background).async{
                 self.brewing = true
@@ -66,29 +57,30 @@ class BrewController {
                 self.brewing = false
             }
         }
-        else if coffee_machine.has_just_stopped_brewing(message: message) {
-            print("disabling brewing")
-            brewing = false
-        }
+        else if coffee_machine.has_just_stopped_brewing(message: message) { brewing = false }
     }
     
     func process_scale_message(message: Data) {
         if let weight = scale.get_weight(message: message) {
-            if weight >= 0 && weight <= 60 {
-                current_brew_weight = weight
-                if brewing {
-                    brew_weight_history.values.append(weight)
-                    brew_weight_history.times.append(Date().timeIntervalSince1970)
-                }
-                else {
-                    if brew_weight_history.times.count > 150 {
-                        brew_weight_history.times = brew_weight_history.times.map{$0 - brew_weight_history.times[0]}
-                        save_shot_weight(brew_weight_history)
-                    }
-                    brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
-                }
+            current_brew_weight = weight
+            if brewing && is_valid(weight) {
+                brew_weight_history.values.append(weight)
+                brew_weight_history.times.append(Date().timeIntervalSince1970)
+            }
+            else {
+                save_brew_weight_history()
+                brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
             }
         }
+    }
+    
+    private func save_brew_weight_history() {
+        let history_seconds = brew_weight_history.times.count / 10
+        if history_seconds < 10 { return }
+        let history_range = brew_weight_history.values.max()! - brew_weight_history.values.min()!
+        if history_range < 5.0 { return }
+        brew_weight_history.times = brew_weight_history.times.map{$0 - brew_weight_history.times[0]}
+        save_shot_weight(brew_weight_history)
     }
     
     func start_brewing_profile() {  // This function runs in a separate thread
@@ -96,7 +88,8 @@ class BrewController {
     }
     func set_idle_coffee_machine_parameters() {}
     func desired_weight_was_reached() -> Bool {
-        return current_brew_weight > desired_brew_weight - 1.0
+        return is_valid(current_brew_weight) &&
+            current_brew_weight > setting("desiredBrewWeight") - 1.5
     }
     
     func wait_for(seconds: Double, sleep_microseconds: UInt32 = 10000) {
@@ -106,7 +99,7 @@ class BrewController {
         }
     }
     
-    func wait_until(condition: () -> Bool, sleep_microseconds: UInt32 = 10000) {
+    func wait_until(_ condition: () -> Bool, sleep_microseconds: UInt32 = 10000) {
         while brewing && condition() {
             usleep(sleep_microseconds)
         }
@@ -117,6 +110,10 @@ class BrewController {
             brewing = false
             usleep(500000) // Wait .5 seconds for finilization of brewing method(send final commands etc)
         }
+    }
+    
+    func is_valid(_ weight: Double) -> Bool {
+        return weight >= 0 && weight <= 60
     }
 }
 
@@ -165,7 +162,7 @@ class ProfiledBrewController: BrewController {
         scale.restart()
         if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
         }
-        wait_until(condition: {current_brew_weight < setting("nonzeroWeightThreshold")})
+        wait_until({is_valid(current_brew_weight) && current_brew_weight < setting("nonzeroWeightThreshold")})
         if brewing {full_power_with_delayed_rampdown(brew_start_time: start_time)}
         wait_until{!desired_weight_was_reached()}
         coffee_machine.set_maximum_shot_time(seconds: Int(-start_time.timeIntervalSinceNow))
