@@ -17,6 +17,8 @@ pods installs
 ```
 to install the project's dependencies.
 
+You can then proceed to compile for your device.
+
 ## Troubleshooting
 The app currently assumes a meCoffee controller and a Felicita scale with certain names, services, and characteristics.
 You might have to modify them to match your own hardware. You can find the details of your BLE devices via e.g. the [LightBlue iOS app](https://punchthrough.com/lightblue-features/).
