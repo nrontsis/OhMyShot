@@ -22,6 +22,7 @@
 		96D19E69272EB84500CE53B1 /* mecoffee_interface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D19E67272EB84500CE53B1 /* mecoffee_interface.swift */; };
 		96D19E6B272EB85900CE53B1 /* felicita_interface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D19E6A272EB85900CE53B1 /* felicita_interface.swift */; };
 		96D19E6C272EB85900CE53B1 /* felicita_interface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D19E6A272EB85900CE53B1 /* felicita_interface.swift */; };
+		96E02AE2274ECAF8004A80E5 /* splines.c in Sources */ = {isa = PBXBuildFile; fileRef = 96E02AE1274ECAF8004A80E5 /* splines.c */; };
 		A84B5976644B8D7E15A260B5 /* Pods_OhMyShot_.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6C9E0D36A7EB8A32C84633D /* Pods_OhMyShot_.framework */; };
 /* End PBXBuildFile section */
 
@@ -52,6 +53,8 @@
 		96D19E64272EB83000CE53B1 /* brew_controller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = brew_controller.swift; sourceTree = "<group>"; };
 		96D19E67272EB84500CE53B1 /* mecoffee_interface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mecoffee_interface.swift; sourceTree = "<group>"; };
 		96D19E6A272EB85900CE53B1 /* felicita_interface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = felicita_interface.swift; sourceTree = "<group>"; };
+		96E02ADF274ECAF7004A80E5 /* splines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = splines.h; sourceTree = "<group>"; };
+		96E02AE1274ECAF8004A80E5 /* splines.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = splines.c; sourceTree = "<group>"; };
 		CF8F0DEA51D91988F48FD36B /* Pods-OhMyShot!.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OhMyShot!.release.xcconfig"; path = "Target Support Files/Pods-OhMyShot!/Pods-OhMyShot!.release.xcconfig"; sourceTree = "<group>"; };
 		F6C9E0D36A7EB8A32C84633D /* Pods_OhMyShot_.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_OhMyShot_.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -114,6 +117,7 @@
 		94362922207E136E00125CD2 /* OhMyShot! */ = {
 			isa = PBXGroup;
 			children = (
+				96E02AE3274ED2F4004A80E5 /* Utils */,
 				96867B7A274AD78000C564D3 /* Hardware */,
 				96D19E63272EB80D00CE53B1 /* Controller */,
 				94946FCF21AE9CF000C21618 /* UI */,
@@ -149,10 +153,27 @@
 			isa = PBXGroup;
 			children = (
 				96D19E64272EB83000CE53B1 /* brew_controller.swift */,
-				96B5F5C8273889D500F10A28 /* persistence.swift */,
-				9655E5022739DBB200D3C5A5 /* maths.swift */,
 			);
 			path = Controller;
+			sourceTree = "<group>";
+		};
+		96E02AE3274ED2F4004A80E5 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				96B5F5C8273889D500F10A28 /* persistence.swift */,
+				96E02AE4274ED311004A80E5 /* Splines */,
+				9655E5022739DBB200D3C5A5 /* maths.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		96E02AE4274ED311004A80E5 /* Splines */ = {
+			isa = PBXGroup;
+			children = (
+				96E02AE1274ECAF8004A80E5 /* splines.c */,
+				96E02ADF274ECAF7004A80E5 /* splines.h */,
+			);
+			path = Splines;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -317,6 +338,7 @@
 				94362926207E136E00125CD2 /* MainUIController.swift in Sources */,
 				96D19E65272EB83000CE53B1 /* brew_controller.swift in Sources */,
 				96D19E6B272EB85900CE53B1 /* felicita_interface.swift in Sources */,
+				96E02AE2274ECAF8004A80E5 /* splines.c in Sources */,
 				9604CB6C2745010000DE7DD3 /* SettingUIController.swift in Sources */,
 				96D19E68272EB84500CE53B1 /* mecoffee_interface.swift in Sources */,
 			);
@@ -474,6 +496,7 @@
 			baseConfigurationReference = 552834CCBC181D31C3AEFADB /* Pods-OhMyShot!.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5B2L6CP38K;
@@ -486,6 +509,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ohmyshot;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "OhMyShot!/Utils/Splines/splines.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -496,6 +521,7 @@
 			baseConfigurationReference = CF8F0DEA51D91988F48FD36B /* Pods-OhMyShot!.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5B2L6CP38K;
@@ -508,6 +534,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ohmyshot;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "OhMyShot!/Utils/Splines/splines.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};

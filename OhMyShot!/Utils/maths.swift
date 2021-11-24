@@ -1,17 +1,5 @@
 import Foundation
 
-func interpolate(x_new: [Double], x: [Double], y: [Double]) -> [Double] {
-    let lower_bound = min(x.min()!, x_new.min()!) - 1.0
-    let upper_bound = max(x.max()!, x_new.max()!) + 1.0
-    var extended_x = x
-    extended_x.insert(lower_bound, at: 0)
-    extended_x.append(upper_bound)
-    var extended_y = y
-    extended_y.insert(y.first!, at: 0)
-    extended_y.append(y.last!)
-    return interpolate_interior(x_new: x_new, x: extended_x, y: extended_y)
-}
-
 
 func interpolate_interior(x_new: [Double], x: [Double], y: [Double]) -> [Double] {
     assert(x_new.first! >= x.first!, "non interior x_new")
@@ -48,22 +36,42 @@ func moving_average(_ data: [Double], period: Int) -> [Double] {
     return result
 }
 
-func median(_ array: [Double]) -> Double {
-    let sorted = array.sorted()
-    if sorted.count % 2 == 0 {
-        return Double((sorted[(sorted.count / 2)] + sorted[(sorted.count / 2) - 1])) / 2
-    } else {
-        return Double(sorted[(sorted.count - 1) / 2])
-    }
-}
-
 func deltas(_ data: [Double], dt: Double = 0.1) -> [Double] {
     return stride(
         from: 0, to: data.count - 1, by: 1
     ).map{(data[$0 + 1] -  data[$0])/dt}
 }
 
+
+func drop_delayed_measurements(_ s: TimeSeries, dt_threshold: Double) -> TimeSeries {
+    let indices_to_keep = [0] + (1..<s.times.count).filter{s.times[$0] - s.times[$0 - 1] <= dt_threshold}
+    return TimeSeries(
+        times: indices_to_keep.map{s.times[$0]},
+        values: indices_to_keep.map{s.values[$0]}
+    )
+}
+
 func round_to(_ data: [Double], decimals: Int) -> [Double] {
     let scaling = pow(10, Double(decimals))
     return data.map{round(scaling*$0)/scaling}
+}
+
+public func spline(x: [Double], y: [Double], smoothing: Double) -> [Double] {
+    if x.count < 3 { return y }
+    
+    var _x = x
+    var _f = y
+    let n = x.count
+    var df = [Double](repeating: 1.0, count: n)
+    var _y = [Double](repeating: 1.0, count: n)
+    var c = [Double](repeating: 1.0, count: 3*(n - 1))
+    var se = [Double](repeating: 1.0, count: n)
+    var wk = [Double](repeating: 1.0, count: 7*(n + 2))
+    var _var: Double = 1.0
+    var _n = CInt(n)
+    var _job = CInt(0)
+    var _ic = CInt(n - 1)
+    var ier = CInt(0)
+    cubgcv_with_manual_rho(&_x, &_f, &df, &_n, &_y, &c, &_ic, &_var, &_job, &se, &wk, &ier, smoothing);
+    return _y
 }

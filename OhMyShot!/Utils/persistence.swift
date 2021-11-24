@@ -80,14 +80,15 @@ func load_shot_weight_per_decisecond(_ index: Int = 0) -> [Double] {
 
 func load_shot_weight_series(_ index: Int = 0) -> TimeSeries {
     if let data = persistent_data.value(forKey: "shotWeight[\(index)]") as? [Double] {
-        return TimeSeries(times: Array(data[0..<data.count/2]), values: Array(data[(data.count/2)...]))
+        let series = TimeSeries(times: Array(data[0..<data.count/2]), values: Array(data[(data.count/2)...]))
+        return drop_delayed_measurements(series, dt_threshold: 0.3)
     }
     return TimeSeries(times: [Double](), values: [Double]())
 }
 
 func write_dummy_shots() {
     for i in 1...number_of_shots_saved {
-        let series = TimeSeries(times: [0.0, 1.0, 10.0], values: [0.0, 0.0, Double(i)*10.0])
+        let series = TimeSeries(times: [0.0, 0.5, 1.0, 7.0, 10.0], values: [0.0, 0.0, 1.0, Double(i)*8.0, Double(i)*11.0])
         persistent_data.set(
             series.times + series.values,
             forKey: "shotWeight[\(i - 1)]"

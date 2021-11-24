@@ -24,7 +24,8 @@ func get_past_shots_series(units: String) -> [AASeriesElement] {
     for i in 0..<number_of_shots_saved {
         var series = load_shot_weight_per_decisecond(i)
         let start_index = series.firstIndex{$0 >= setting("nonzeroWeightThreshold")} ?? 0
-        series = units == "g/s" ? moving_average(deltas(series), period: 25) : series
+        series = spline(x: (0..<series.count).map{Double($0)/10.0}, y: series, smoothing: 40)
+        series = units == "g/s" ? deltas(series) : series
         if is_true("plotsStartAtNonZeroWeight") {series = Array(series[start_index...])}
         let name = i == 0 ? "Weight Last shot" : "Weight \(i) shot\(i > 1 ? "s" : "") before"
         list_of_series.append(AASeriesElement().name(name).data(round_to(series, decimals: 2)))

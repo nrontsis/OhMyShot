@@ -73,7 +73,7 @@ class BrewController {
                 brew_weight_history.values.append(weight)
                 brew_weight_history.times.append(Date().timeIntervalSince1970)
             }
-            else {
+            else if !brewing {
                 save_brew_weight_history()
                 brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
             }
