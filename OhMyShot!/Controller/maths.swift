@@ -39,9 +39,9 @@ func interpolate_interior(x: [Double], y: [Double], step: Double) -> [Double] {
     )
 }
 
-func moving_avergae(_ data: [Double], period: Int) -> [Double] {
+func moving_average(_ data: [Double], period: Int) -> [Double] {
     let result = (0..<data.count).compactMap { index -> Double in
-        let range = index..<index + period
+        let range = max(index - period + 1, 0)...index
         let window = Array(data[range])
         return window.reduce(0.0, +)/Double(window.count)
     }
@@ -55,4 +55,15 @@ func median(_ array: [Double]) -> Double {
     } else {
         return Double(sorted[(sorted.count - 1) / 2])
     }
+}
+
+func deltas(_ data: [Double], dt: Double = 0.1) -> [Double] {
+    return stride(
+        from: 0, to: data.count - 1, by: 1
+    ).map{(data[$0 + 1] -  data[$0])/dt}
+}
+
+func round_to(_ data: [Double], decimals: Int) -> [Double] {
+    let scaling = pow(10, Double(decimals))
+    return data.map{round(scaling*$0)/scaling}
 }

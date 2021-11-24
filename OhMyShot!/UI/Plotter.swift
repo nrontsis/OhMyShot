@@ -1,41 +1,33 @@
 import AAInfographics
 import CoreGraphics
-
 import Foundation
 
-func deltas(_ data: [Double], dt: Double = 0.1) -> [Double] {
-    return stride(
-        from: 0, to: data.count - 1, by: 1
-    ).map{(data[$0 + 1] -  data[$0])/dt}
-}
-
-
-func create_past_shots_chart(width: CGFloat, height: CGFloat, show_rate: Bool) -> AAChartView {
-    let unit = show_rate ? "g/s" : "g"
-    var data = [[Double]]()
-    for i in 0...3 {
-        var series = load_shot_weight_per_decisecond(i)
-        if is_true("plotsStartAtNonZeroWeight") {
-            series = series.filter{$0 > setting("nonzeroWeightThreshold")}
-        }
-        data.append(show_rate ? moving_avergae(deltas(series), period: 25) : series)
-    }
-    var series = [AASeriesElement]()
-    for (i, datum) in data.enumerated() {
-        let name = i == 0 ? "Weight Last shot" : "Weight \(i) shot\(i > 1 ? "s" : "") before"
-        series.append(AASeriesElement().name(name).data(datum.map{Double(round(100*$0)/100)}))
-    }
+func create_past_shots_chart(parent_frame: CGRect, units: String) -> AAChartView {
     let aaChartView = AAChartView()
-    aaChartView.frame = CGRect(x:0,y:0,width:width,height:height)
+    aaChartView.frame = CGRect(x:0,y:0,width:parent_frame.width,height:parent_frame.height)
     let aaChartModel = AAChartModel()
     .chartType(.line)
     .animationType(.swingFromTo)
     .markerRadius(0)
-    .tooltipValueSuffix(" " + unit)
+    .tooltipValueSuffix(" " + units)
     .categories((0...500).map { String(format: "%.1f", Double($0)/10.0) })
     .xAxisTickInterval(50)
     .colorsTheme(["#fe117c","#ffc069","#06caf4","#7dffc0"])
-    .series(series)
+    .series(get_past_shots_series(units: units))
     aaChartView.aa_drawChartWithChartModel(aaChartModel)
+    aaChartView.scrollEnabled = false
     return aaChartView
+}
+
+func get_past_shots_series(units: String) -> [AASeriesElement] {
+    var list_of_series = [AASeriesElement]()
+    for i in 0..<number_of_shots_saved {
+        var series = load_shot_weight_per_decisecond(i)
+        let start_index = series.firstIndex{$0 >= setting("nonzeroWeightThreshold")} ?? 0
+        series = units == "g/s" ? moving_average(deltas(series), period: 25) : series
+        if is_true("plotsStartAtNonZeroWeight") {series = Array(series[start_index...])}
+        let name = i == 0 ? "Weight Last shot" : "Weight \(i) shot\(i > 1 ? "s" : "") before"
+        list_of_series.append(AASeriesElement().name(name).data(round_to(series, decimals: 2)))
+    }
+    return list_of_series
 }

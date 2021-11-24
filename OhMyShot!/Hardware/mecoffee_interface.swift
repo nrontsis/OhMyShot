@@ -29,6 +29,7 @@ class MeCoffeeInterface: CoffeeMachineInterface {
     }
     
     func get_temperature(message: Data) -> Double! {
+        print_info(message: message)
         if let str: String = String(data: message, encoding: .ascii) {
             if str.contains("tmp ") {
                 let temperature_messages = str.components(separatedBy: "tmp ").last!.components(separatedBy: " ")
@@ -111,7 +112,6 @@ func get_pump_parameters_for_ramp_at(shot_time: Double, power_start: Double, pow
     /*
     The pressure is defined as
     power(t) = initial_power*(1 - t/ramp_duration) + final_power*t/ramp_up_duration
-    when t <= ramp_up_duration; otherwise it is equal to power(ramp_up_duration).
     
     In our case, we know that final_power = power_end and that ramp_duration = shot_time + duration
     the initial_power, comes from the requirement power(shot_time) = power_start

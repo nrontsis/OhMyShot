@@ -19,7 +19,7 @@ class MainUIController: UIViewController {
                 controllerTypeSelection.selectedSegmentIndex = i
             }
         }
-        updateCharts()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.updateCharts() }
     }
     
     func received_scale_message(data: Data) {
@@ -76,9 +76,8 @@ class MainUIController: UIViewController {
     
     func updateCharts() {
         let chart = create_past_shots_chart(
-            width: plotView.frame.width,
-            height: plotView.frame.height,
-            show_rate: plotStyle!.selectedSegmentIndex == 0
+            parent_frame: plotView.frame,
+            units: plotStyle!.selectedSegmentIndex == 0 ? "g/s" : "g"
         )
         chart.delegate = self
         plotView.addSubview(chart)
@@ -98,15 +97,19 @@ class MainUIController: UIViewController {
         let mode = sender.titleForSegment(at: sender.selectedSegmentIndex)
         save_setting("controllerType", mode!)
     }
+    
     func update_info_label(temperature: Double? = nil, runtime: Double? = nil, weight: Double? = nil) {
         let info = infoLabel.text!
-        var runtime_str = info.subString(from: 0, to: 2)
-        var temp_str = info.subString(from: 6, to: 11)
-        var final_str = info[info.firstIndex(of: "🌡")!...]
-        if runtime != nil && !runtime!.isNaN { runtime_str = String(format:"%2.0f", runtime!)}
-        if temperature != nil && !temperature!.isNaN { temp_str = String(format:"%5.1f", temperature!)}
-        if weight != nil && !weight!.isNaN { final_str = "🌡 " + String(format:"%4.1f", weight!) + "g ⚖️"}
-        infoLabel.text = "\(runtime_str)m ⌛ \(temp_str)°C \(final_str)"
+        var runtime_str = String(info[...info.firstIndex(of: "⌛")!])
+        var temperature_str = String(info[info.firstIndex(of: "⌛")!...info.firstIndex(of: "🌡")!].dropFirst())
+        var weight_str = String(info[info.firstIndex(of: "🌡")!...].dropFirst())
+        
+        let is_valid: (Double?) -> Bool = {$0 != nil && !$0!.isNaN}
+        if is_valid(runtime) { runtime_str = String(format:"%2.0fm ⌛", runtime!) }
+        if is_valid(temperature) { temperature_str = String(format:" %5.1f°C 🌡", temperature!) }
+        if is_valid(weight) { weight_str = String(format:" %4.1fg ⚖️", weight!) }
+        
+        infoLabel.text = runtime_str + temperature_str + weight_str
     }
     @IBOutlet weak var controllerTypeSelection: UISegmentedControl!
     @IBOutlet weak var desiredBrewWeightSlider: UISlider!
@@ -119,7 +122,7 @@ class MainUIController: UIViewController {
 
 extension MainUIController: AAChartViewDelegate {
     open func aaChartViewDidFinishLoad(_ aaChartView: AAChartView) {
-       for i in 2...3 {
+       for i in 2..<number_of_shots_saved {
            aaChartView.aa_hideTheSeriesElementContentWithSeriesElementIndex(i)
        }
     }

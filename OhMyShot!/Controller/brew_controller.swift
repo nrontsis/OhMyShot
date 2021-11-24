@@ -31,7 +31,7 @@ protocol ScaleInterface {
 class BrewController {
     let scale: ScaleInterface
     let coffee_machine: CoffeeMachineInterface
-    var minutes_since_coffee_machine_power_on: Double = 0.0
+    var minutes_since_coffee_machine_power_on: Double = Double.nan
     var coffee_machine_temperature: Double = Double.nan
     var brewing = false
     var current_brew_weight = Double.nan
@@ -49,11 +49,17 @@ class BrewController {
     }
     
     func process_coffee_machine_message(message: Data) {
-        if let temperature = coffee_machine.get_temperature(message: message) { coffee_machine_temperature = temperature}
+        if let temperature = coffee_machine.get_temperature(message: message) {
+            coffee_machine_temperature = temperature
+        }
+        if let runtime = coffee_machine.get_runtime(message: message) {
+            minutes_since_coffee_machine_power_on = Double(runtime) / 60.0
+        }
         if !brewing && coffee_machine.has_just_started_brewing(message: message) {
             DispatchQueue.global(qos: .background).async{
                 self.brewing = true
                 self.start_brewing_profile()
+                self.wait_for(seconds: 1) // To allow recording of data etc. to finish
                 self.brewing = false
             }
         }
@@ -86,10 +92,22 @@ class BrewController {
     func start_brewing_profile() {  // This function runs in a separate thread
         precondition(false, "No brewing profile defined")
     }
-    func set_idle_coffee_machine_parameters() {}
+    
+    func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
+        if coffee_machine.can_send() {
+            coffee_machine.set_boiler_temperature_target_for_brewing(
+                degrees_celcius: setting("boilerTemperatureSetpoint")
+            )
+        }
+    }
+    
     func desired_weight_was_reached() -> Bool {
         return is_valid(current_brew_weight) &&
             current_brew_weight > setting("desiredBrewWeight") - 1.5
+    }
+    
+    func is_weight_positive() -> Bool {
+        return is_valid(current_brew_weight) && current_brew_weight > setting("nonzeroWeightThreshold")
     }
     
     func wait_for(seconds: Double, sleep_microseconds: UInt32 = 10000) {
@@ -100,7 +118,7 @@ class BrewController {
     }
     
     func wait_until(_ condition: () -> Bool, sleep_microseconds: UInt32 = 10000) {
-        while brewing && condition() {
+        while brewing && !condition() {
             usleep(sleep_microseconds)
         }
     }
@@ -129,9 +147,7 @@ class PlainBrewController: BrewController {
     }
     
     override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
-        coffee_machine.set_boiler_temperature_target_for_brewing(
-            degrees_celcius: setting("boilerTemperatureSetpoint")
-        )
+        super.set_idle_coffee_machine_parameters()
         coffee_machine.set_initial_pressure(percentage: 100)
         coffee_machine.set_final_pressure(percentage: 100)
     }
@@ -142,9 +158,9 @@ class PlainBrewController: BrewController {
         if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
         }
         coffee_machine.set_maximum_shot_time(seconds: 60)
-        wait_until{!desired_weight_was_reached()}
+        wait_until{desired_weight_was_reached()}
         coffee_machine.set_maximum_shot_time(seconds: Int(-start_time.timeIntervalSinceNow))
-        sleep(1) // To account for the fact that the scale timer started a bit after brewing
+        wait_for(seconds: 1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
         coffee_machine.set_boiler_temperature_target_for_brewing(
             degrees_celcius: setting("boilerTemperatureSetpoint")
@@ -162,16 +178,18 @@ class ProfiledBrewController: BrewController {
         scale.restart()
         if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
         }
-        wait_until({is_valid(current_brew_weight) && current_brew_weight < setting("nonzeroWeightThreshold")})
-        if brewing {full_power_with_delayed_rampdown(brew_start_time: start_time)}
-        wait_until{!desired_weight_was_reached()}
+        coffee_machine.set_maximum_shot_time(seconds: 60)
+        wait_until({is_weight_positive()})
+        full_power_with_delayed_rampdown(brew_start_time: start_time)
+        wait_until({desired_weight_was_reached()})
         coffee_machine.set_maximum_shot_time(seconds: Int(-start_time.timeIntervalSinceNow))
-        sleep(1) // To account for the fact that the scale timer started a bit after brewing
+        wait_for(seconds: 1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
         set_idle_coffee_machine_parameters()
     }
     
     func full_power_with_delayed_rampdown(brew_start_time: Date) {
+        if !brewing {return}
         let duration = 30.0
         let ramp_down_parameters = get_pump_parameters_for_ramp_at(
             shot_time: -brew_start_time.timeIntervalSinceNow + setting("stayAtFullPowerDuration"),
@@ -185,14 +203,12 @@ class ProfiledBrewController: BrewController {
     }
     
     override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
+        super.set_idle_coffee_machine_parameters()
         coffee_machine.set_initial_pressure(percentage: Int(round(setting("initialPumpPower"))))
         coffee_machine.set_final_pressure(percentage: 100)
         let rampup_time = (100.0 - setting("initialPumpPower"))/setting("initialRampUpRate")
         coffee_machine.set_pressure_rampup_time(seconds: Int(rampup_time))
         coffee_machine.set_added_power_when_brewing(percent: Int(setting("addedBoilerPowerWhileBrewing")))
-        coffee_machine.set_boiler_temperature_target_for_brewing(
-            degrees_celcius: setting("boilerTemperatureSetpoint")
-        )
     }
 }
 
@@ -212,12 +228,10 @@ class BackFlushingBrewController: BrewController {
     }
     
     override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
+        super.set_idle_coffee_machine_parameters()
         coffee_machine.set_initial_pressure(percentage: 100)
         coffee_machine.set_final_pressure(percentage: 100)
         coffee_machine.set_maximum_shot_time(seconds: brew_time + 1)
-        coffee_machine.set_boiler_temperature_target_for_brewing(
-            degrees_celcius: setting("boilerTemperatureSetpoint")
-        )
     }
     
     override func start_brewing_profile() {  // This function runs in a separate thread
@@ -229,10 +243,12 @@ class BackFlushingBrewController: BrewController {
                 coffee_machine.set_maximum_shot_time(seconds: current_shot_end_time)
             }
             if backflush_iteration < backflush_iterations {
-                wait_until{-start_time.timeIntervalSinceNow < Double(current_shot_end_time + pause_time) - 0.5}
+                wait_until(
+                    {-start_time.timeIntervalSinceNow > Double(current_shot_end_time + pause_time) - 0.5}
+                )
             }
             else {
-                wait_until{-start_time.timeIntervalSinceNow < Double(current_shot_end_time)}
+                wait_until({-start_time.timeIntervalSinceNow > Double(current_shot_end_time)})
             }
         }
         coffee_machine.set_maximum_shot_time(seconds: brew_time + 1)
@@ -241,14 +257,11 @@ class BackFlushingBrewController: BrewController {
 
 class WarmupCoffeeController: BrewController {
     override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
-        coffee_machine.set_preinfusion_state(on: false)
+        super.set_idle_coffee_machine_parameters()
         coffee_machine.set_initial_pressure(percentage: Int(setting("warmupPumpPower")))
         coffee_machine.set_final_pressure(percentage: Int(setting("warmupPumpPower")))
         coffee_machine.set_added_power_when_brewing(percent: Int(setting("warmupAddedBoilerPower")))
         coffee_machine.set_maximum_shot_time(seconds: Int(setting("warmupDuration")))
-        coffee_machine.set_boiler_temperature_target_for_brewing(
-            degrees_celcius: setting("boilerTemperatureSetpoint")
-        )
     }
     
     override func start_brewing_profile() {}  // This function runs in a separate thread

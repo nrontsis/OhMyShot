@@ -1,7 +1,7 @@
 import Foundation
 let persistent_data = UserDefaults(suiteName: "com.nikitas.OhMyShot!")!
 
-let number_of_shots_saved = 5
+let number_of_shots_saved = 4
 
 struct TimeSeries: Codable {
     var times: [Double]
@@ -19,7 +19,7 @@ func raw_setting(_ key: String) -> String {
             "addedBoilerPowerWhileBrewing": "6.0",
             "initialPumpPower": "40",
             "initialRampUpRate": "1.0",
-            "stayAtFullPowerDuration": "10",
+            "stayAtFullPowerDuration": "5.0",
             "rampDownRate": "2.0",
             "controllerType": "Profiled",
             "desiredBrewWeight": "36.0",
@@ -60,7 +60,7 @@ func save_shot_weight(_ series: TimeSeries){
 }
 
 func shift_saved_shots() {
-    for i in (1...number_of_shots_saved).reversed() {
+    for i in (1..<number_of_shots_saved).reversed() {
         persistent_data.set(
             persistent_data.value(forKey: "shotWeight[\(i - 1)]"),
             forKey: "shotWeight[\(i)]"
@@ -85,12 +85,12 @@ func load_shot_weight_series(_ index: Int = 0) -> TimeSeries {
     return TimeSeries(times: [Double](), values: [Double]())
 }
 
-func save_dummy_data() {
-    for i in 0...number_of_shots_saved {
-        let series = TimeSeries(times: [0.0, 1.0, 10.0], values: [0.0, 1.0, 10.0])
+func write_dummy_shots() {
+    for i in 1...number_of_shots_saved {
+        let series = TimeSeries(times: [0.0, 1.0, 10.0], values: [0.0, 0.0, Double(i)*10.0])
         persistent_data.set(
             series.times + series.values,
-            forKey: "shotWeight[\(i)]"
+            forKey: "shotWeight[\(i - 1)]"
         )
     }
 }
