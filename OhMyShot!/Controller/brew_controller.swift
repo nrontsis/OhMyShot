@@ -81,7 +81,8 @@ class BrewController {
     }
     
     private func save_brew_weight_history() {
-        let history_seconds = brew_weight_history.times.count / 10
+        if brew_weight_history.times.isEmpty { return }
+        let history_seconds = brew_weight_history.times.last! - brew_weight_history.times.first!
         if history_seconds < 10 { return }
         let history_range = brew_weight_history.values.max()! - brew_weight_history.values.min()!
         if history_range < 5.0 { return }
