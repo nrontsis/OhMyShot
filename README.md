@@ -1,4 +1,4 @@
-# OhMyShot! Automate your espresso routine
+# OhMyShot: Automate your espresso routine
 
 OhMyShot is an iOS app that supercharges your old school espresso machine.
 It provides gravimetric control, a shot timer, advanced pressure profiles, data analysis and more! See the following video for a short introduction.
