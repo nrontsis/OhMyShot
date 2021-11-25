@@ -1,9 +1,5 @@
 import Foundation
 
-func dummy_send_command_felicita(_ d: Data) {
-    print("Data supposed to been sent to felicita scale, but ignored:", d.map { String(format: "%02x", $0) }.joined())
-}
-
 class FelicitaInterface : ScaleInterface {
     private let send_command: ((Data) -> ())?
     
