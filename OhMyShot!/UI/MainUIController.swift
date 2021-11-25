@@ -19,6 +19,7 @@ class MainUIController: UIViewController {
                 controllerTypeSelection.selectedSegmentIndex = i
             }
         }
+        if saved_shots_exist() { plotView.isHidden = true}
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.updateCharts() }
     }
     
@@ -75,6 +76,11 @@ class MainUIController: UIViewController {
     }
     
     func updateCharts() {
+        if !saved_shots_exist() { return }
+        plotView.isHidden = false
+        if let chart = plotView.subviews.last as? AAChartView {
+            chart.removeFromSuperview()
+        }
         let chart = create_past_shots_chart(
             parent_frame: plotView.frame,
             units: plotStyle!.selectedSegmentIndex == 0 ? "g/s" : "g"
@@ -113,7 +119,14 @@ class MainUIController: UIViewController {
     }
     @IBOutlet weak var controllerTypeSelection: UISegmentedControl!
     @IBOutlet weak var desiredBrewWeightSlider: UISlider!
-    @IBAction func refreshPlot(_ sender: Any) { updateCharts() }
+    @IBAction func refreshPlot(_ sender: Any) {
+        updateCharts()
+    }
+    @IBAction func helpButtonClicked(_ sender: Any) {
+        if let chart = plotView.subviews.last as? AAChartView {
+            chart.removeFromSuperview()
+        }
+    }
     @IBAction func plotStyleChanged(_ sender: Any) { updateCharts() }
 }
 

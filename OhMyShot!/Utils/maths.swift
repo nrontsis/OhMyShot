@@ -2,7 +2,7 @@ import Foundation
 
 
 func interpolate_interior(x_new: [Double], x: [Double], y: [Double]) -> [Double] {
-    assert(x_new.first! >= x.first!, "non interior x_new")
+    assert(x_new.first! >= x.first!, "Interpolating index is not contained in the original index")
     assert(x_new.last! <= x.last!, "non interior x_new")
     var y_new = [Double]()
     var i = 0
@@ -36,10 +36,10 @@ func moving_average(_ data: [Double], period: Int) -> [Double] {
     return result
 }
 
-func deltas(_ data: [Double], dt: Double = 0.1) -> [Double] {
-    return stride(
-        from: 0, to: data.count - 1, by: 1
-    ).map{(data[$0 + 1] -  data[$0])/dt}
+func finite_differences(x: [Double], y: [Double]) -> [Double] {
+    let diff_x = stride(from: 0, to: x.count - 1, by: 1).map{x[$0 + 1] - x[$0]}
+    let diff_y = stride(from: 0, to: y.count - 1, by: 1).map{y[$0 + 1] - y[$0]}
+    return zip(diff_x, diff_y).map{$1/$0}
 }
 
 
@@ -54,24 +54,4 @@ func drop_delayed_measurements(_ s: TimeSeries, dt_threshold: Double) -> TimeSer
 func round_to(_ data: [Double], decimals: Int) -> [Double] {
     let scaling = pow(10, Double(decimals))
     return data.map{round(scaling*$0)/scaling}
-}
-
-public func spline(x: [Double], y: [Double], smoothing: Double) -> [Double] {
-    if x.count < 3 { return y }
-    
-    var _x = x
-    var _f = y
-    let n = x.count
-    var df = [Double](repeating: 1.0, count: n)
-    var _y = [Double](repeating: 1.0, count: n)
-    var c = [Double](repeating: 1.0, count: 3*(n - 1))
-    var se = [Double](repeating: 1.0, count: n)
-    var wk = [Double](repeating: 1.0, count: 7*(n + 2))
-    var _var: Double = 1.0
-    var _n = CInt(n)
-    var _job = CInt(0)
-    var _ic = CInt(n - 1)
-    var ier = CInt(0)
-    cubgcv_with_manual_rho(&_x, &_f, &df, &_n, &_y, &c, &_ic, &_var, &_job, &se, &wk, &ier, smoothing);
-    return _y
 }

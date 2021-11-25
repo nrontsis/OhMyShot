@@ -12,6 +12,7 @@
 		9436292B207E136E00125CD2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9436292A207E136E00125CD2 /* Assets.xcassets */; };
 		9604CB6C2745010000DE7DD3 /* SettingUIController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9604CB6B2745010000DE7DD3 /* SettingUIController.swift */; };
 		9634481A27481DE000B80E9A /* bluetooth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9634481927481DE000B80E9A /* bluetooth.swift */; };
+		9651F330274FE3F400757249 /* splines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9651F32F274FE3F400757249 /* splines.swift */; };
 		9655E5032739DBB200D3C5A5 /* maths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9655E5022739DBB200D3C5A5 /* maths.swift */; };
 		968D8068272EC73900A58665 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968D8067272EC73900A58665 /* AppDelegate.swift */; };
 		96B5F5C9273889D500F10A28 /* persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B5F5C8273889D500F10A28 /* persistence.swift */; };
@@ -46,6 +47,7 @@
 		9604CB6B2745010000DE7DD3 /* SettingUIController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingUIController.swift; sourceTree = "<group>"; };
 		96221AAB272B2ACA00D4D1E3 /* OhMyShot!Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "OhMyShot!Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9634481927481DE000B80E9A /* bluetooth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bluetooth.swift; sourceTree = "<group>"; };
+		9651F32F274FE3F400757249 /* splines.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splines.swift; sourceTree = "<group>"; };
 		9655E5022739DBB200D3C5A5 /* maths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = maths.swift; sourceTree = "<group>"; };
 		968D8067272EC73900A58665 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		96B5F5C8273889D500F10A28 /* persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = persistence.swift; sourceTree = "<group>"; };
@@ -172,6 +174,7 @@
 			children = (
 				96E02AE1274ECAF8004A80E5 /* splines.c */,
 				96E02ADF274ECAF7004A80E5 /* splines.h */,
+				9651F32F274FE3F400757249 /* splines.swift */,
 			);
 			path = Splines;
 			sourceTree = "<group>";
@@ -336,6 +339,7 @@
 				96B5F5C9273889D500F10A28 /* persistence.swift in Sources */,
 				9655E5032739DBB200D3C5A5 /* maths.swift in Sources */,
 				94362926207E136E00125CD2 /* MainUIController.swift in Sources */,
+				9651F330274FE3F400757249 /* splines.swift in Sources */,
 				96D19E65272EB83000CE53B1 /* brew_controller.swift in Sources */,
 				96D19E6B272EB85900CE53B1 /* felicita_interface.swift in Sources */,
 				96E02AE2274ECAF8004A80E5 /* splines.c in Sources */,

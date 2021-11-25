@@ -1,3 +1,5 @@
+// This file was obtained from the GR Visualisation Framework: https://bit.ly/3rdfIMq
+// It is identical to the above link, except for the last function (cubgcv_with_manual_rho).
 /*
  *    Algorithm 642 collected algorithms from ACM.
  *    Algorithm appeared in ACM-Trans. Math. Software, Vol.12, No. 2,
@@ -588,11 +590,13 @@ void b_spline(int n, double *x, double *y, int m, double *sx, double *sy)
     }
 }
 
-
+/*
+ *  See the docs of cubgcv - cubgcv_with_manual_rho it shares the same function arguments, except for
+ *  the last one (rho) that determines the smoothing of the spline (in cubgcv is inferred automatically).
+ */
 void cubgcv_with_manual_rho(double *x, double *f, double *df, int *n, double *y, double *c, int *ic, double *var, int *job, double *se, double *wk, int *ier, double rho)
 {
-  double err, gf1;
-  double avh, avdf = 0.0, avar, stat[6], p, q;
+  double gf1, avh, avdf = 0.0, avar, stat[6], p, q;
 
   int i;
 

@@ -59,6 +59,15 @@ func save_shot_weight(_ series: TimeSeries){
     persistent_data.set(series.times + series.values, forKey: "shotWeight[0]")
 }
 
+func saved_shots_exist() -> Bool {
+    for i in 0..<number_of_shots_saved {
+        if load_shot_weight_series(i).times.count > 0 {
+            return true
+        }
+    }
+    return false
+}
+
 func shift_saved_shots() {
     for i in (1..<number_of_shots_saved).reversed() {
         persistent_data.set(
