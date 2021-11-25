@@ -26,7 +26,7 @@ to install the project's dependency, [AAChartKit-Swift](https://github.com/AACha
 The app currently assumes a meCoffee controller and a Felicita scale with certain names, services, and characteristics.
 You might have to modify them to match your own hardware. You can find the details of your BLE devices via e.g. the [LightBlue iOS app](https://punchthrough.com/lightblue-features/).
 
-## Disclaimer:
+## Disclaimer
 Note that the software is pre-release and under development.
 It has only been **partially** tested on the following hardware setup: 
 * Rancilio Silvia V6;
