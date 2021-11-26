@@ -13,8 +13,7 @@ It requires a coffee machine with [the meCoffee (BLE version) installed](https:/
 
 See the following [video](https://youtu.be/gE_HsdVl0Kk) for a quick introduction, and [this post at CoffeeForums.co.uk](https://www.coffeeforums.co.uk/topic/62855-ohmyshot-an-open-source-ios-app-that-automates-your-coffee-machine/?tab=comments#comment-866901)
 
-[![https://youtu.be/gE_HsdVl0Kk](https://img.youtube.com/vi/gE_HsdVl0Kk/0.jpg)](https://youtu.be/gE_HsdVl0Kk)
-
+[<img src="https://user-images.githubusercontent.com/4145552/143609401-23f48f98-6a18-4220-9394-3c134b9f2ab7.png" width="250">](https://youtu.be/gE_HsdVl0Kk)
 
 ## Installation
 The app is still under development and has not been tested thoroughly. Before using the repo, read its disclaimer below.
@@ -25,7 +24,7 @@ pods install
 ```
 to install the project's dependency, [AAChartKit-Swift](https://github.com/AAChartModel/AAChartKit-Swift). You can then proceed to compile and upload to your device.
 
-Before using the repo, make sure you have **disabled the pre-infusion of meCoffee** using the me/uBarista app.
+Before using the app, make sure you have **disabled the pre-infusion of meCoffee** using the me/uBarista app.
 
 ## Troubleshooting
 The app currently assumes a meCoffee controller and a Felicita scale with [certain names, services, and characteristics](https://github.com/nrontsis/OhMyShot/blob/main/OhMyShot!/Hardware/bluetooth.swift#L5-L15).
