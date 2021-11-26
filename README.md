@@ -11,7 +11,7 @@ and more! See the following video for a short introduction.
 
 It requires a coffee machine with [the meCoffee (BLE version) installed](https://mecoffee.nl), and a bluetooth scale. As such it has the potential of supporting the Rancilio Silvia, Gaggia classic, and Vibiemme Domobar coffe machines.
 
-See the following video for a quick introduction, and the following post at CoffeeForums.co.uk
+See the following [video](https://youtu.be/gE_HsdVl0Kk) for a quick introduction, and [this post at CoffeeForums.co.uk](https://www.coffeeforums.co.uk/topic/62855-ohmyshot-an-open-source-ios-app-that-automates-your-coffee-machine/?tab=comments#comment-866901)
 
 [![https://youtu.be/gE_HsdVl0Kk](https://img.youtube.com/vi/gE_HsdVl0Kk/0.jpg)](https://youtu.be/gE_HsdVl0Kk)
 
