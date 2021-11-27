@@ -237,7 +237,7 @@ class BackFlushingBrewController: BrewController {
     
     override func start_brewing_profile() {  // This function runs in a separate thread
         let start_time = Date()
-        let backflush_iterations = 2
+        let backflush_iterations = 6
         for backflush_iteration in 1...backflush_iterations {
             let current_shot_end_time = (backflush_iteration - 1)*(brew_time + pause_time) + brew_time
             if brewing && backflush_iteration > 1 { // First shot slightly longer than the rest
