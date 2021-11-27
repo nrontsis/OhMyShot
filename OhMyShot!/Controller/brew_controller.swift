@@ -59,7 +59,6 @@ class BrewController {
             DispatchQueue.global(qos: .background).async{
                 self.brewing = true
                 self.start_brewing_profile()
-                self.wait_for(seconds: 1) // To allow recording of data etc. to finish
                 self.brewing = false
             }
         }
@@ -69,18 +68,18 @@ class BrewController {
     func process_scale_message(message: Data) {
         if let weight = scale.get_weight(message: message) {
             current_brew_weight = weight
-            if brewing && is_valid(weight) {
+            if !is_valid(weight) { return }
+            
+            let time = Date().timeIntervalSince1970
+            if should_record(weight: weight, time: time) {
                 brew_weight_history.values.append(weight)
-                brew_weight_history.times.append(Date().timeIntervalSince1970)
+                brew_weight_history.times.append(time)
             }
-            else if !brewing {
-                save_brew_weight_history()
-                brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
-            }
+            else { offload_brew_weight_history() }
         }
     }
     
-    private func save_brew_weight_history() {
+    private func offload_brew_weight_history() {
         if brew_weight_history.times.isEmpty { return }
         let history_seconds = brew_weight_history.times.last! - brew_weight_history.times.first!
         if history_seconds < 10 { return }
@@ -88,6 +87,17 @@ class BrewController {
         if history_range < 5.0 { return }
         brew_weight_history.times = brew_weight_history.times.map{$0 - brew_weight_history.times[0]}
         save_shot_weight(brew_weight_history)
+        brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
+    }
+    
+    private func should_record(weight: Double, time: TimeInterval) -> Bool {
+        if brewing { return true }
+        if let last_saved_time = brew_weight_history.times.last {
+            return (time - last_saved_time <= 1.5) // Record 1.5s after the end of brewing, as coffee continues to flow after pump is off.
+        }
+        else {
+            return false
+        }
     }
     
     func start_brewing_profile() {  // This function runs in a separate thread
@@ -160,7 +170,7 @@ class PlainBrewController: BrewController {
         }
         coffee_machine.set_maximum_shot_time(seconds: 60)
         wait_until{desired_weight_was_reached()}
-        coffee_machine.set_maximum_shot_time(seconds: Int(-start_time.timeIntervalSinceNow))
+        coffee_machine.set_maximum_shot_time(seconds: max(Int(-start_time.timeIntervalSinceNow), 4)) // 4 sec min avoids shots stopping before setting max shot time = 60s
         wait_for(seconds: 1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
         coffee_machine.set_boiler_temperature_target_for_brewing(
@@ -183,7 +193,7 @@ class ProfiledBrewController: BrewController {
         wait_until({is_weight_positive()})
         full_power_with_delayed_rampdown(brew_start_time: start_time)
         wait_until({desired_weight_was_reached()})
-        coffee_machine.set_maximum_shot_time(seconds: Int(-start_time.timeIntervalSinceNow))
+        coffee_machine.set_maximum_shot_time(seconds: max(Int(-start_time.timeIntervalSinceNow), 4)) // 4 sec min avoids shots stopping before setting max shot time = 60s
         wait_for(seconds: 1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
         set_idle_coffee_machine_parameters()

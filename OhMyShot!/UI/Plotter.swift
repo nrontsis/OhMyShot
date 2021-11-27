@@ -29,7 +29,7 @@ func get_past_shots_series(units: String) -> [AASeriesElement] {
         )
         var series = units == "g/s" ? smoothed_derivative : smoothed_data
         if is_true("plotsStartAtNonZeroWeight") {series = Array(series[start_index...])}
-        let name = (i == 0 ? "Last shot" : "\(i) before") + String(format:" [%.1f|%.1fs]", Double(start_index)/10.0, max(Double(weight.count - start_index)/10.0 - 1.0, 0.0))
+        let name = (i == 0 ? "Last shot" : "\(i) before") + String(format:" [%.1f|%.1fs]", Double(start_index)/10.0, max(Double(weight.count - start_index)/10.0 - 1.5, 0.0))
         list_of_series.append(AASeriesElement().name(name).data(round_to(series, decimals: 2)))
     }
     return list_of_series
