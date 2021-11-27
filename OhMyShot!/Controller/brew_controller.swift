@@ -33,10 +33,11 @@ class BrewController {
     let coffee_machine: CoffeeMachineInterface
     var minutes_since_coffee_machine_power_on: Double = Double.nan
     var coffee_machine_temperature: Double = Double.nan
-    var brewing = false
+    var brewing = false { didSet { if !brewing { end_time_last_shot = Date() } } }
     var current_brew_weight = Double.nan
     
     private var brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
+    private var end_time_last_shot = Date() - Double.infinity
 
     class func requires_scale() -> Bool {
         return false
@@ -59,7 +60,7 @@ class BrewController {
             DispatchQueue.global(qos: .background).async{
                 self.brewing = true
                 self.start_brewing_profile()
-                self.brewing = false
+                if self.brewing { self.brewing = false } // Avoid triggering didSet to keep end_time_last_shot correct
             }
         }
         else if coffee_machine.has_just_stopped_brewing(message: message) { brewing = false }
@@ -70,13 +71,18 @@ class BrewController {
             current_brew_weight = weight
             if !is_valid(weight) { return }
             
-            let time = Date().timeIntervalSince1970
+            let time = Date()
             if should_record(weight: weight, time: time) {
                 brew_weight_history.values.append(weight)
-                brew_weight_history.times.append(time)
+                brew_weight_history.times.append(time.timeIntervalSince1970)
             }
             else { offload_brew_weight_history() }
         }
+    }
+    
+    private func should_record(weight: Double, time: Date) -> Bool {
+        // Record 1.5s after the end of brewing, as coffee continues to flow after pump is off.
+        return brewing || (time.timeIntervalSince(end_time_last_shot) <= 1.5)
     }
     
     private func offload_brew_weight_history() {
@@ -88,16 +94,6 @@ class BrewController {
         brew_weight_history.times = brew_weight_history.times.map{$0 - brew_weight_history.times[0]}
         save_shot_weight(brew_weight_history)
         brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
-    }
-    
-    private func should_record(weight: Double, time: TimeInterval) -> Bool {
-        if brewing { return true }
-        if let last_saved_time = brew_weight_history.times.last {
-            return (time - last_saved_time <= 1.5) // Record 1.5s after the end of brewing, as coffee continues to flow after pump is off.
-        }
-        else {
-            return false
-        }
     }
     
     func start_brewing_profile() {  // This function runs in a separate thread
@@ -170,7 +166,7 @@ class PlainBrewController: BrewController {
         }
         coffee_machine.set_maximum_shot_time(seconds: 60)
         wait_until{desired_weight_was_reached()}
-        coffee_machine.set_maximum_shot_time(seconds: max(Int(-start_time.timeIntervalSinceNow), 4)) // 4 sec min avoids shots stopping before setting max shot time = 60s
+        coffee_machine.set_maximum_shot_time(seconds: max(Int(-start_time.timeIntervalSinceNow), 4)) // 4 sec min to allow enough initialization time in next shot
         wait_for(seconds: 1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
         coffee_machine.set_boiler_temperature_target_for_brewing(
@@ -193,7 +189,7 @@ class ProfiledBrewController: BrewController {
         wait_until({is_weight_positive()})
         full_power_with_delayed_rampdown(brew_start_time: start_time)
         wait_until({desired_weight_was_reached()})
-        coffee_machine.set_maximum_shot_time(seconds: max(Int(-start_time.timeIntervalSinceNow), 4)) // 4 sec min avoids shots stopping before setting max shot time = 60s
+        coffee_machine.set_maximum_shot_time(seconds: max(Int(-start_time.timeIntervalSinceNow), 4)) // 4 sec min to allow enough initialization time in next shot
         wait_for(seconds: 1) // To account for the fact that the scale timer started a bit after brewing
         scale.stop_timer()
         set_idle_coffee_machine_parameters()
