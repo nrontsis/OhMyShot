@@ -47,7 +47,7 @@ class BluetoothController: NSObject, CBPeripheralDelegate, CBCentralManagerDeleg
         func send_cmd(_ data: Data) -> Void {
             for _ in 0...1 {
                 peripherals[MECOFFEE_BLE_NAME]?.writeValue(data, for: characteristics[MECOFFEE_BLE_NAME]!, type: .withResponse)
-                usleep(400000)
+                usleep(150000)
             }
         }
         return MeCoffeeInterface(send_command: characteristics[MECOFFEE_BLE_NAME] != nil ? send_cmd: nil)

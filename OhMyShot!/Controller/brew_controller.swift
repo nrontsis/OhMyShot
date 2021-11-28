@@ -87,13 +87,15 @@ class BrewController {
     
     private func offload_brew_weight_history() {
         if brew_weight_history.times.isEmpty { return }
-        let history_seconds = brew_weight_history.times.last! - brew_weight_history.times.first!
-        if history_seconds < 10 { return }
-        let history_range = brew_weight_history.values.max()! - brew_weight_history.values.min()!
-        if history_range < 5.0 { return }
-        brew_weight_history.times = brew_weight_history.times.map{$0 - brew_weight_history.times[0]}
-        save_shot_weight(brew_weight_history)
+        var history = brew_weight_history
         brew_weight_history = TimeSeries(times: [Double](), values: [Double]())
+        let history_seconds = history.times.last! - history.times.first!
+        if history_seconds < 10 && history.times.count > 5 { return }
+        let history_range = history.values.max()! - history.values.min()!
+        if history_range < 5.0 { return }
+        history.times = history.times.map{$0 - history.times[0]}
+        for i in 0...5 { history.values[i] = 0.0 }  // Zero out values before tare
+        save_shot_weight(history)
     }
     
     func start_brewing_profile() {  // This function runs in a separate thread
@@ -162,9 +164,8 @@ class PlainBrewController: BrewController {
     override func start_brewing_profile() {  // This function runs in a separate thread
         let start_time = Date()
         scale.restart()
-        if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
-        }
         coffee_machine.set_maximum_shot_time(seconds: 60)
+        if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0) }
         wait_until{desired_weight_was_reached()}
         coffee_machine.set_maximum_shot_time(seconds: max(Int(-start_time.timeIntervalSinceNow), 4)) // 4 sec min to allow enough initialization time in next shot
         wait_for(seconds: 1) // To account for the fact that the scale timer started a bit after brewing
@@ -183,9 +184,9 @@ class ProfiledBrewController: BrewController {
     override func start_brewing_profile() {  // This function runs in a separate thread
         let start_time = Date()
         scale.restart()
-        if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0)
-        }
         coffee_machine.set_maximum_shot_time(seconds: 60)
+        if is_true("disablePIDWhenBrewing") { coffee_machine.set_boiler_temperature_target_for_brewing(degrees_celcius: 0) }
+        coffee_machine.set_initial_pressure(percentage: Int(round(setting("initialPumpPower"))))
         wait_until({is_weight_positive()})
         full_power_with_delayed_rampdown(brew_start_time: start_time)
         wait_until({desired_weight_was_reached()})
@@ -211,7 +212,7 @@ class ProfiledBrewController: BrewController {
     
     override func set_idle_coffee_machine_parameters() {  // This function runs in a separate thread
         super.set_idle_coffee_machine_parameters()
-        coffee_machine.set_initial_pressure(percentage: Int(round(setting("initialPumpPower"))))
+        coffee_machine.set_initial_pressure(percentage: 100)
         coffee_machine.set_final_pressure(percentage: 100)
         let rampup_time = (100.0 - setting("initialPumpPower"))/setting("initialRampUpRate")
         coffee_machine.set_pressure_rampup_time(seconds: Int(rampup_time))

@@ -32,7 +32,6 @@ class MainUIController: UIViewController {
     func received_coffee_machine_message(data: Data) {
         recreate_controller_if_necessary(data)
         controller!.process_coffee_machine_message(message: data)
-        controllerTypeSelection.isEnabled = !controller!.brewing
         update_info_label(
             temperature: controller!.coffee_machine_temperature,
             runtime: controller!.minutes_since_coffee_machine_power_on

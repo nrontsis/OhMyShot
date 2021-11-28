@@ -22,6 +22,7 @@ func create_past_shots_chart(parent_frame: CGRect, units: String) -> AAChartView
 func get_past_shots_series(units: String) -> [AASeriesElement] {
     var list_of_series = [AASeriesElement]()
     for i in 0..<number_of_shots_saved {
+        print(load_shot_weight_series(i))
         let weight = load_shot_weight_per_decisecond(i)
         let start_index = weight.firstIndex{$0 >= setting("nonzeroWeightThreshold")} ?? 0
         let (smoothed_data, smoothed_derivative) : ([Double], [Double]) = smooth_spline_with_derivative(
