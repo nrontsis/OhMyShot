@@ -2,14 +2,18 @@ import Foundation
 
 
 class MeCoffeeInterface: CoffeeMachineInterface {
-    private let send_command: ((Data) -> ())?
+    private let send_command_with_expected_response: ((Data, Data) -> ())?
     
-    init(send_command: ((Data) -> ())?) {
-        self.send_command = send_command
+    init(send_command_with_expected_response: ((Data, Data) -> ())?) {
+        self.send_command_with_expected_response = send_command_with_expected_response
     }
     
     func can_send() -> Bool {
-        return send_command != nil
+        return send_command_with_expected_response != nil
+    }
+    
+    func print_to_string(message: Data) -> String {
+        return String(data: message, encoding: .ascii) ?? "[CORRUPTED DATA]"
     }
     
     func has_just_started_brewing(message: Data) -> Bool {
@@ -29,7 +33,7 @@ class MeCoffeeInterface: CoffeeMachineInterface {
     }
     
     func get_temperature(message: Data) -> Double! {
-        print_info(message: message)
+        // print_info(message: message)
         if let str: String = String(data: message, encoding: .ascii) {
             if str.contains("tmp ") {
                 let temperature_messages = str.components(separatedBy: "tmp ").last!.components(separatedBy: " ")
@@ -103,7 +107,10 @@ class MeCoffeeInterface: CoffeeMachineInterface {
     }
 
     func cmd(_ name: String, _ value: Int) {
-        send_command?("\ncmd set \(name) \(value) OK\n".data(using: .ascii)!)
+        send_command_with_expected_response?(
+            "\ncmd set \(name) \(value) OK\n".data(using: .ascii)!,
+            "cmd set s_\(name) \(value) OK\r\n".data(using: .ascii)!
+        )
     }
 }
 

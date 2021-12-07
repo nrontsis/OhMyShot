@@ -31,6 +31,7 @@ class FelicitaInterface : ScaleInterface {
         tare()
         reset_timer()
         start_timer()
+        tare()
     }
 
     func get_weight(message: Data) -> Double? {

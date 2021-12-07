@@ -54,9 +54,13 @@ func string_setting(_ key: String) -> String {
 }
 
 func save_shot_weight(_ series: TimeSeries){
-    print("Saving:", series)
     shift_saved_shots()
     persistent_data.set(series.times + series.values, forKey: "shotWeight[0]")
+}
+
+func save_coffee_machine_messages(_ messages: [String]){
+    shift_saved_coffee_machine_messages()
+    persistent_data.set(messages, forKey: "coffeeMachineMessages[0]")
 }
 
 func saved_shots_exist() -> Bool {
@@ -77,6 +81,22 @@ func shift_saved_shots() {
     }
 }
 
+func shift_saved_coffee_machine_messages() {
+    for i in (1..<20).reversed() {
+        persistent_data.set(
+            persistent_data.value(forKey: "coffeeMachineMessages[\(i - 1)]"),
+            forKey: "coffeeMachineMessages[\(i)]"
+        )
+    }
+}
+
+func load_coffee_machine_messages(_ index: Int = 0) -> [String] {
+    if let data = persistent_data.value(forKey: "coffeeMachineMessages[\(index)]") as? [String] {
+        return data
+    }
+    return [String]()
+}
+
 func load_shot_weight_per_decisecond(_ index: Int = 0) -> [Double] {
     let series = load_shot_weight_series(index)
     if series.times.count > 1 && series.values.count > 1 {
@@ -89,8 +109,9 @@ func load_shot_weight_per_decisecond(_ index: Int = 0) -> [Double] {
 
 func load_shot_weight_series(_ index: Int = 0) -> TimeSeries {
     if let data = persistent_data.value(forKey: "shotWeight[\(index)]") as? [Double] {
-        let series = TimeSeries(times: Array(data[0..<data.count/2]), values: Array(data[(data.count/2)...]))
-        return drop_delayed_measurements(series, dt_threshold: 0.3)
+        var series = TimeSeries(times: Array(data[0..<data.count/2]), values: Array(data[(data.count/2)...]))
+        for _ in 1...8 { series = drop_delayed_measurements(series, dt_threshold: 0.3) }
+        return series
     }
     return TimeSeries(times: [Double](), values: [Double]())
 }

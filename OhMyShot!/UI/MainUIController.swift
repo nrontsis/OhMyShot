@@ -23,6 +23,16 @@ class MainUIController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.updateCharts() }
     }
     
+    @IBAction func shareLogs(_ sender: Any) {
+        var text = ""
+        for i in 0...20 {
+            text += ("Coffee machine BLE messages for shot \(i) \n \(load_coffee_machine_messages(i)) \n\n")
+            text += ("Time series of brew weight for shot \(i): \(load_shot_weight_series(i)) \n\n")
+        }
+        let controller = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+        self.present(controller, animated: true, completion: nil)
+    }
+    
     func received_scale_message(data: Data) {
         recreate_controller_if_necessary(data)
         controller!.process_scale_message(message: data)
