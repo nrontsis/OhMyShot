@@ -25,7 +25,8 @@ class BluetoothController: NSObject, CBPeripheralDelegate, CBCentralManagerDeleg
     private let ble_manager: CBCentralManager
     private var peripherals: [String: CBPeripheral] = [:]
     private var characteristics: [String: CBCharacteristic] = [:]
-    
+    private var coffee_message_cache = ""
+    private var latest_coffee_machine_command_acknowledgement = Data()
 
     override init() {
         ble_manager = CBCentralManager(delegate: nil, queue: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey:true])
@@ -44,13 +45,26 @@ class BluetoothController: NSObject, CBPeripheralDelegate, CBCentralManagerDeleg
     }
     
     func create_coffee_machine_interface() -> CoffeeMachineInterface {
-        func send_cmd(_ data: Data) -> Void {
-            for _ in 0...1 {
+        func send_cmd(_ data: Data, _ expected_response: Data) -> Void {
+            latest_coffee_machine_command_acknowledgement = Data()
+            for attempt in 1...4 {
+                if latest_coffee_machine_command_acknowledgement == expected_response || characteristics[MECOFFEE_BLE_NAME] == nil { break }
+                if attempt > 1 {
+                    print(
+                        "BLE command failed to be acknowledged (attempt #\(attempt))",
+                        [
+                            String(data:latest_coffee_machine_command_acknowledgement, encoding: .ascii)!,
+                            String(data:expected_response, encoding: .ascii)!
+                        ],
+                        latest_coffee_machine_command_acknowledgement == expected_response
+                    )
+                }
+                latest_coffee_machine_command_acknowledgement = Data()
                 peripherals[MECOFFEE_BLE_NAME]?.writeValue(data, for: characteristics[MECOFFEE_BLE_NAME]!, type: .withResponse)
-                usleep(150000)
+                for _ in 1...attempt*30 { if latest_coffee_machine_command_acknowledgement == Data() { usleep(UInt32(10000)) }}
             }
         }
-        return MeCoffeeInterface(send_command: characteristics[MECOFFEE_BLE_NAME] != nil ? send_cmd: nil)
+        return MeCoffeeInterface(send_command_with_expected_response: characteristics[MECOFFEE_BLE_NAME] != nil ? send_cmd: nil)
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
@@ -67,8 +81,23 @@ class BluetoothController: NSObject, CBPeripheralDelegate, CBCentralManagerDeleg
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        let callback = peripheral.name == MECOFFEE_BLE_NAME ? coffe_machine_message_callback : scale_message_callback
-        callback?(characteristic.value!)
+        if peripheral.name == MECOFFEE_BLE_NAME {
+            let message = String(data: characteristic.value!, encoding: .ascii)!
+            let components = message.components(separatedBy: "\n")
+            for part in components.dropLast() {
+                let full_message = coffee_message_cache + part + "\n"
+                print(full_message)
+                coffe_machine_message_callback?(full_message.data(using: .ascii)!)
+                coffee_message_cache = ""
+                if full_message.contains("cmd set s_") {
+                    latest_coffee_machine_command_acknowledgement = full_message.data(using: .ascii)!
+                }
+            }
+            coffee_message_cache = coffee_message_cache + components.last!
+        }
+        else if peripheral.name == SCALE_BLE_NAME {
+            scale_message_callback?(characteristic.value!)
+        }
     }
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
