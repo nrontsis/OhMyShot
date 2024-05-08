@@ -237,7 +237,7 @@ class ProfiledBrewController: BrewController {
 
 class BackFlushingBrewController: BrewController {
     private let pause_time = 10
-    private let brew_time = 4
+    private let brew_time = 5
     
     override func process_coffee_machine_message(message: Data) {
         // Don't listen to the stopped brewing messages
@@ -256,7 +256,7 @@ class BackFlushingBrewController: BrewController {
     }
     
     override func start_brewing_profile() {  // This function runs in a separate thread
-        let backflush_iterations = 6
+        let backflush_iterations = 8
         for backflush_iteration in 1...backflush_iterations {
             let current_shot_end_time = (backflush_iteration - 1)*(brew_time + pause_time) + brew_time
             if brewing && backflush_iteration > 1 { // First shot slightly longer than the rest

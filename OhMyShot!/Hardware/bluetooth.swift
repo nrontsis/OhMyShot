@@ -120,7 +120,7 @@ class BluetoothController: NSObject, CBPeripheralDelegate, CBCentralManagerDeleg
         let callback = peripheral.name == MECOFFEE_BLE_NAME ? coffe_machine_message_callback : scale_message_callback
         characteristics.removeValue(forKey: peripheral.name!)
         callback?(peripheral.name == MECOFFEE_BLE_NAME ? DISCONNECTED_MECOFFEE : DISCONNECTED_SCALE)
-        ble_manager.connect(peripheral, options: nil)
+        // ble_manager.connect(peripheral, options: nil)
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
