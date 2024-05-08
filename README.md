@@ -9,7 +9,7 @@ It provides
 
 and more! See the following video for a short introduction.
 
-It requires a coffee machine with [the meCoffee (BLE version) installed](https://mecoffee.nl), and a bluetooth scale. As such it has the potential of supporting the Rancilio Silvia, Gaggia classic, and Vibiemme Domobar coffe machines.
+It requires a coffee machine with [the meCoffee (BLE version) installed](https://mecoffee.nl), and a bluetooth scale. As such it has the potential of supporting the Rancilio Silvia, Gaggia classic, and Vibiemme Domobar coffee machines.
 
 See the following [video](https://youtu.be/gE_HsdVl0Kk) for a quick introduction, and [this post at CoffeeForums.co.uk](https://www.coffeeforums.co.uk/topic/62855-ohmyshot-an-open-source-ios-app-that-automates-your-coffee-machine/?tab=comments#comment-866901)
 
@@ -20,7 +20,7 @@ The app is still under development and has not been tested thoroughly. Before us
 
 The repo uses [cocoa-pods for its dependencies](https://guides.cocoapods.org/using/getting-started.html). Upon downloading, run
 ```
-pods install
+pod install
 ```
 to install the project's dependency, [AAChartKit-Swift](https://github.com/AAChartModel/AAChartKit-Swift). You can then proceed to compile and upload to your device.
 
